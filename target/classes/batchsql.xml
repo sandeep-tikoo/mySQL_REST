@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081"  doc:name="HTTP Listener Configuration"/>
+    <db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" password="root" database="sandeep" doc:name="MySQL Configuration"/>
+    <file:connector name="FileOutput" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
+    <flow name="setpayload">
+        <set-payload value="CustID: #[flowVars.customerId[0]]
+LoadId: #[flowVars.loanID[0]]  
+Amount: #[flowVars.loanAmount[0]]
+UriParm: #[message.inboundProperties.'http.uri.params'.parm]
+" doc:name="Set Payload"/>
+    </flow>
+    <sub-flow name="getDataFromMySQL">
+        <choice doc:name="Choice">
+            <when expression="#[message.inboundProperties.'http.uri.params'.parm == empty]">
+                <set-variable variableName="whereClause" value="0" doc:name="Variable"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="whereClause" value="#[message.inboundProperties.'http.uri.params'.parm] " doc:name="Variable"/>
+            </otherwise>
+        </choice>
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[select * from loan
+where (
+		#[flowVars.whereClause] = 0 or customer_id = #[flowVars.whereClause]
+	  );]]></db:parameterized-query>
+        </db:select>
+        <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="5abbdc57-da6c-4549-beaa-f5da31f43b43">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	loans: payload map ((payload01 , indexOfPayload01) -> {
+		loan_id: payload01.loan_id,
+		loan_type: payload01.loan_type,
+		loan_amount: payload01.loan_amount,
+		monthly_payment: payload01.monthly_payment,
+		customer_id: payload01.customer_id,
+		interest_rate: payload01.interest_rate
+	})
+}]]></dw:set-payload>
+            <dw:set-variable variableName="loanID"><![CDATA[%dw 1.0
+%output application/java
+---
+payload.loan_id]]></dw:set-variable>
+            <dw:set-variable variableName="loanAmount"><![CDATA[%dw 1.0
+%output application/java
+---
+payload.loan_amount]]></dw:set-variable>
+            <dw:set-variable variableName="customerId"><![CDATA[%dw 1.0
+%output application/java
+---
+payload.customer_id]]></dw:set-variable>
+            <dw:set-variable variableName="uriParms"><![CDATA[%dw 1.0
+%output application/java
+---
+inboundProperties."http.uri.params"
+]]></dw:set-variable>
+        </dw:transform-message>
+    </sub-flow>
+    <flow name="batchsqlFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/getJson" allowedMethods="GET" doc:name="HTTP"/>
+        <flow-ref name="getDataFromMySQL" doc:name="getDataFromMySQL"/>
+
+    </flow>
+    <flow name="batchsqlFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/getJson/{parm}" allowedMethods="GET" doc:name="HTTP"/>
+        <flow-ref name="getDataFromMySQL" doc:name="getDataFromMySQL"/>
+    </flow>
+</mule>

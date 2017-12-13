@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	name="DocDistribution" targetNamespace="http://local.topdanmark.dk/DocDistribution/"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://local.topdanmark.dk/DocDistribution/"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<wsdl:types>
+		<xs:schema targetNamespace="http://local.topdanmark.dk/DocDistribution/">
+			<xs:element name="distribution_request">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element type="xs:int" name="customerId" />
+						<xs:element type="xs:string" name="name" />
+						<xs:element type="xs:string" name="street_1" />
+						<xs:element type="xs:string" name="street_2" />
+						<xs:element type="xs:int" name="zipcode" />
+						<xs:element type="xs:string" name="city" />
+						<xs:element type="xs:string" name="country" />
+						<xs:element type="xs:int" name="policynumber" />
+						<xs:element type="xs:string" name="policytype" />
+						<xs:element type="xs:string" name="price" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="distribution_report">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element type="xs:int" name="status" />
+						<xs:element type="xs:string" name="message" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+
+		</xs:schema>
+	</wsdl:types>
+
+	<wsdl:message name="Request">
+		<wsdl:part element="tns:distribution_request" name="parameters" />
+	</wsdl:message>
+	<wsdl:message name="Response">
+		<wsdl:part element="tns:distribution_report" name="parameters" />
+	</wsdl:message>
+
+	<wsdl:portType name="DocumentDistribution">
+		<wsdl:operation name="sendDocument">
+			<wsdl:input message="tns:Request" />
+			<wsdl:output message="tns:Response" />
+		</wsdl:operation>
+	</wsdl:portType>
+
+	<wsdl:binding name="DocumentDistributionSOAP" type="tns:DocumentDistribution">
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="sendDocument">
+			<soap:operation
+				soapAction="http://local.topdanmark.dk/DocDistribution/distribute" />
+			<wsdl:input>
+				<soap:body use="literal" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal" />
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+
+	<wsdl:service name="DocumentDistribution">
+		<wsdl:port binding="tns:DocumentDistributionSOAP" name="DocumentDistributionSOAP">
+			<soap:address location="http://local.topdanmark.dk/distribute" />
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

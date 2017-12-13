@@ -1,0 +1,34 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "jsonnoroot"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "jsoonroot"
+        },
+        "flowVariables": {
+            "customerId": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "cust_ID"
+            },
+            "uriParms": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "uriParmV"
+            },
+            "loanID": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "loadId"
+            },
+            "loanAmount": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "amt"
+            }
+        }
+    },
+    "id": "5abbdc57-da6c-4549-beaa-f5da31f43b43",
+    "version": "5.2.0.0"
+}
